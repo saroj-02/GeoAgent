@@ -1,0 +1,17 @@
+{
+    "python.defaultInterpreterPath": "/Users/sarojpadhi/PROJECTS/GeoAgent/venv/bin/python",
+
+    "python.pyrefly.configPath": "/Users/sarojpadhi/PROJECTS/GeoAgent/pyrefly.toml",
+
+    "python.analysis.extraPaths": [
+        "/Users/sarojpadhi/PROJECTS/GeoAgent/backend"
+    ],
+
+    "python.pyrefly.extraSearchPaths": [
+        "/Users/sarojpadhi/PROJECTS/GeoAgent/backend"
+    ],
+
+    "python.pyrefly.typeCheckingMode": "default",
+
+    "python.pyrefly.diagnosticMode": "workspace"
+}
