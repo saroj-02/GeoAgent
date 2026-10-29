@@ -686,6 +686,10 @@ video {
 .inset-0 {
   inset: 0px;
 }
+.inset-x-4 {
+  left: 1rem;
+  right: 1rem;
+}
 .left-4 {
   left: 1rem;
 }
@@ -1128,6 +1132,9 @@ video {
 .border-red-700\/50 {
   border-color: rgb(185 28 28 / 0.5);
 }
+.border-red-700\/60 {
+  border-color: rgb(185 28 28 / 0.6);
+}
 .border-red-800 {
   --tw-border-opacity: 1;
   border-color: rgb(153 27 27 / var(--tw-border-opacity, 1));
@@ -1242,6 +1249,9 @@ video {
 }
 .bg-slate-950\/90 {
   background-color: rgb(2 6 23 / 0.9);
+}
+.bg-slate-950\/95 {
+  background-color: rgb(2 6 23 / 0.95);
 }
 .bg-success {
   --tw-bg-opacity: 1;

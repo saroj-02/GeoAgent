@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST="{\"app/dashboard/map/page.tsx -> @/components/dashboard/DeviceMap\":{\"id\":\"app/dashboard/map/page.tsx -> @/components/dashboard/DeviceMap\",\"files\":[\"static/chunks/_app-pages-browser_components_dashboard_DeviceMap_tsx.js\"]}}"

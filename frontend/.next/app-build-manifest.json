@@ -25,6 +25,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/layout.js"
+    ],
+    "/dashboard/map/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/map/page.js"
     ]
   }
 }

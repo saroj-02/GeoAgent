@@ -6,8 +6,8 @@ import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { apiClient } from "@/lib/api";
 import type { Device, LocationPoint } from "@/types";
 
-const SatelliteMap = dynamic(
-  () => import("@/components/satellite/SatelliteMap"),
+const DeviceMap = dynamic(
+  () => import("@/components/dashboard/DeviceMap"),
   {
     ssr: false,
     loading: () => (
@@ -81,16 +81,6 @@ export default function DeviceMapPage() {
     loadDeviceLocations();
   }, []);
 
-  const bbox =
-    markers.length > 0
-      ? [
-          Math.min(...markers.map((marker) => marker.longitude)) - 0.005,
-          Math.min(...markers.map((marker) => marker.latitude)) - 0.005,
-          Math.max(...markers.map((marker) => marker.longitude)) + 0.005,
-          Math.max(...markers.map((marker) => marker.latitude)) + 0.005,
-        ]
-      : undefined;
-
   return (
     <DashboardSection
       eyebrow="Workspace / Map"
@@ -114,12 +104,9 @@ export default function DeviceMapPage() {
           a location yet, or your account may not have location access.
         </p>
       )}
-      <SatelliteMap
-        bbox={bbox}
+      <DeviceMap
         markers={markers}
         heightClass="h-[560px]"
-        showBaseMap
-        showFootprint={false}
       />
     </DashboardSection>
   );

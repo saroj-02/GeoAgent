@@ -92,6 +92,13 @@ For the deployed frontend, set `NEXT_PUBLIC_API_URL` to
 automatically. If `CORS_ORIGINS` is explicitly set on the backend deployment,
 include `https://geoagent-1.onrender.com` in that JSON array as well.
 
+The dashboard map uses Google Maps for its map styles, Street View and 45°
+imagery. Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in the frontend deployment and
+enable the Maps JavaScript API with billing. Restrict the key to your frontend
+domains using HTTP referrer restrictions. The key is used by the browser, so
+do not use an unrestricted key. Street View and 45° imagery depend on Google
+coverage for the selected location.
+
 **If this file doesn't exist**: 
 ```bash
 cd frontend
