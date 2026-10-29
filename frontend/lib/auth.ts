@@ -1,10 +1,9 @@
 "use client";
 
 import type { User, AuthTokens } from "@/types";
+import { normalizeApiBaseUrl } from "@/lib/api-url";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://localhost:8000/api/v1";
+const API_URL = normalizeApiBaseUrl();
 
 const TOKEN_KEY = "geoagent_access_token";
 const REFRESH_TOKEN_KEY = "geoagent_refresh_token";

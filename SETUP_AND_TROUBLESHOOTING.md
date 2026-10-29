@@ -87,6 +87,11 @@ Check `frontend/.env.local` contains:
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
+For the deployed frontend, set `NEXT_PUBLIC_API_URL` to
+`https://geoagent-s6z2.onrender.com`. The frontend adds the `/api/v1` prefix
+automatically. If `CORS_ORIGINS` is explicitly set on the backend deployment,
+include `https://geoagent-1.onrender.com` in that JSON array as well.
+
 **If this file doesn't exist**: 
 ```bash
 cd frontend
@@ -97,7 +102,7 @@ cp .env.example .env.local
 
 **Test Registration via Swagger UI:**
 1. Go to `http://localhost:8000/docs`
-2. Find "POST /auth/register"
+2. Find "POST /api/v1/auth/register"
 3. Click "Try it out"
 4. Enter this JSON:
 ```json
@@ -132,7 +137,7 @@ cp .env.example .env.local
 
 **After successful registration, test login:**
 1. Go to `http://localhost:8000/docs`
-2. Find "POST /auth/login"
+2. Find "POST /api/v1/auth/login"
 3. Click "Try it out"
 4. Enter:
 ```json
@@ -343,15 +348,15 @@ No migration commands needed!
 **Access**: `http://localhost:8000/docs`
 
 **Steps:**
-1. Scroll to "POST /auth/register"
+1. Scroll to "POST /api/v1/auth/register"
 2. Click "Try it out"
 3. Modify example JSON
 4. Click "Execute"
 5. Check response
 
 **Key endpoints to test:**
-- POST /auth/register - Create account
-- POST /auth/login - Get tokens
+- POST /api/v1/auth/register - Create account
+- POST /api/v1/auth/login - Get tokens
 - POST /auth/refresh - Refresh token
 - GET /devices - List devices (needs Bearer token)
 - POST /devices - Create device
