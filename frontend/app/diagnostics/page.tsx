@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { normalizeApiBaseUrl } from "@/lib/api-url";
 
 interface DiagnosticResult {
   name: string;
@@ -23,9 +24,7 @@ export default function DiagnosticsPage() {
   }, []);
 
   async function runDiagnostics() {
-    const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:8000/api/v1";
+    const apiUrl = normalizeApiBaseUrl();
     const newResults: DiagnosticResult[] = [];
 
     // Check 1: API URL Configuration
@@ -38,10 +37,8 @@ export default function DiagnosticsPage() {
 
     // Check 2: Backend Health
     try {
-      const healthResponse = await fetch(`${apiUrl.replace(/\/api\/v1\/?$/, "")}/health`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
+      const healthUrl = apiUrl.replace(/\/api\/v1$/, "");
+      const healthResponse = await fetch(`${healthUrl}/health`);
 
       if (healthResponse.ok) {
         const data = await healthResponse.json();
@@ -64,24 +61,20 @@ export default function DiagnosticsPage() {
         name: "Backend Health",
         status: "error",
         message: "Cannot connect to backend",
-        details: err instanceof Error ? err.message : "Unknown error",
+        details: `${err instanceof Error ? err.message : "Unknown error"}. Check that the backend allows this frontend origin in CORS_ORIGINS.`,
       });
     }
 
     // Check 3: Registration Endpoint
     try {
-      const registerResponse = await fetch(`${apiUrl}/auth/register`, {
-        method: "OPTIONS",
-        headers: { "Content-Type": "application/json" },
-      });
+      const registerResponse = await fetch(`${apiUrl}/auth/register`);
 
-      if (registerResponse.ok || registerResponse.status === 405) {
-        // 405 Method Not Allowed is fine for OPTIONS
+      if (registerResponse.status === 405) {
         newResults.push({
           name: "Registration Endpoint",
           status: "success",
-          message: "Registration endpoint is accessible",
-          details: `HTTP ${registerResponse.status}`,
+          message: "Registration route is reachable",
+          details: "HTTP 405: expected for a GET request to this POST-only endpoint",
         });
       } else {
         newResults.push({
@@ -96,23 +89,20 @@ export default function DiagnosticsPage() {
         name: "Registration Endpoint",
         status: "error",
         message: "Cannot reach registration endpoint",
-        details: err instanceof Error ? err.message : "Unknown error",
+        details: `${err instanceof Error ? err.message : "Unknown error"}. Check that the backend allows this frontend origin in CORS_ORIGINS.`,
       });
     }
 
     // Check 4: Login Endpoint
     try {
-      const loginResponse = await fetch(`${apiUrl}/auth/login`, {
-        method: "OPTIONS",
-        headers: { "Content-Type": "application/json" },
-      });
+      const loginResponse = await fetch(`${apiUrl}/auth/login`);
 
-      if (loginResponse.ok || loginResponse.status === 405) {
+      if (loginResponse.status === 405) {
         newResults.push({
           name: "Login Endpoint",
           status: "success",
-          message: "Login endpoint is accessible",
-          details: `HTTP ${loginResponse.status}`,
+          message: "Login route is reachable",
+          details: "HTTP 405: expected for a GET request to this POST-only endpoint",
         });
       } else {
         newResults.push({
@@ -127,7 +117,7 @@ export default function DiagnosticsPage() {
         name: "Login Endpoint",
         status: "error",
         message: "Cannot reach login endpoint",
-        details: err instanceof Error ? err.message : "Unknown error",
+        details: `${err instanceof Error ? err.message : "Unknown error"}. Check that the backend allows this frontend origin in CORS_ORIGINS.`,
       });
     }
 
@@ -213,7 +203,11 @@ export default function DiagnosticsPage() {
               <li className="flex gap-3">
                 <span className="text-live">1.</span>
                 <span>
-                  Make sure the backend is running:
+                  For local development, start the backend from the
+                  <code className="bg-background px-2 py-1 rounded font-mono text-xs">
+                    backend
+                  </code>
+                  folder:
                   <code className="block mt-1 bg-background px-2 py-1 rounded font-mono text-xs">
                     uvicorn app.main:app --reload
                   </code>
@@ -228,29 +222,37 @@ export default function DiagnosticsPage() {
               <li className="flex gap-3">
                 <span className="text-live">3.</span>
                 <span>
-                  Verify environment variable in
+                  Set
                   <code className="bg-background px-2 py-1 rounded font-mono text-xs">
-                    frontend/.env.local
+                    CORS_ORIGINS
                   </code>
-                  :
-                  <code className="block mt-1 bg-background px-2 py-1 rounded font-mono text-xs">
-                    NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
-                  </code>
+                  on the backend to include your frontend origin (scheme and
+                  hostname only), then redeploy/restart the backend.
                 </span>
               </li>
               <li className="flex gap-3">
                 <span className="text-live">4.</span>
                 <span>
-                  Check backend logs for errors in the terminal where you started it
+                  Set
+                  <code className="bg-background px-2 py-1 rounded font-mono text-xs">
+                    NEXT_PUBLIC_API_URL
+                  </code>
+                  in the frontend deployment to
+                  <code className="bg-background px-2 py-1 rounded font-mono text-xs">
+                    https://your-backend-host/api/v1
+                  </code>
+                  .
                 </span>
               </li>
               <li className="flex gap-3">
                 <span className="text-live">5.</span>
                 <span>
-                  Verify PostgreSQL is running and DATABASE_URL is correct in
+                  Check backend logs and verify MongoDB connectivity. The
+                  backend uses
                   <code className="bg-background px-2 py-1 rounded font-mono text-xs">
-                    backend/.env
+                    MONGODB_URL
                   </code>
+                  in its environment.
                 </span>
               </li>
             </ul>

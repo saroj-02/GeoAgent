@@ -7,6 +7,7 @@ import {
   logout as authLogout,
   refreshAccessToken,
 } from "@/lib/auth";
+import { normalizeApiBaseUrl } from "@/lib/api-url";
 
 import {
   AuthTokens,
@@ -28,9 +29,7 @@ import {
   GeofenceCreateRequest,
 } from "@/types";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:8000/api/v1";
+const API_BASE = normalizeApiBaseUrl();
 
 interface ApiClientConfig {
   baseURL: string;
