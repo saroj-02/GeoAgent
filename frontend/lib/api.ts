@@ -2,6 +2,7 @@
 
 import {
   getToken,
+  getRefreshToken,
   setToken as setAuthToken,
   setRefreshToken as setAuthRefreshToken,
   logout as authLogout,
@@ -103,6 +104,46 @@ class ApiClient {
     return headers;
   }
 
+  private async fetchWithAuth(
+    input: RequestInfo | URL,
+    init: RequestInit
+  ): Promise<Response> {
+    const headers = new Headers(init.headers);
+    const hasAuthHeader = headers.has("Authorization");
+    let response = await fetch(input, init);
+
+    if (response.status !== 401 || !hasAuthHeader) {
+      return response;
+    }
+
+    let accessToken: string;
+    try {
+      accessToken = await refreshAccessToken();
+    } catch (error) {
+      if (!getRefreshToken()) {
+        this.clearToken();
+        throw new Error("Your session has expired. Please log in again.");
+      }
+
+      throw new Error(
+        error instanceof Error
+          ? `Unable to refresh your session: ${error.message}`
+          : "Unable to refresh your session. Please try again."
+      );
+    }
+
+    this.token = accessToken;
+    headers.set("Authorization", `Bearer ${accessToken}`);
+    response = await fetch(input, { ...init, headers });
+
+    if (response.status === 401) {
+      this.clearToken();
+      throw new Error("Your session has expired. Please log in again.");
+    }
+
+    return response;
+  }
+
   private async handleResponse<T>(
     response: Response
   ): Promise<T> {
@@ -196,7 +237,7 @@ class ApiClient {
   }
 
   async getCurrentUser(): Promise<User> {
-    const response = await fetch(
+    const response = await this.fetchWithAuth(
       `${this.baseURL}/users/me`,
       {
         method: "GET",
@@ -218,7 +259,7 @@ class ApiClient {
       >
     >
   ): Promise<User> {
-    const response = await fetch(
+    const response = await this.fetchWithAuth(
       `${this.baseURL}/users/me`,
       {
         method: "PATCH",
@@ -234,7 +275,7 @@ class ApiClient {
     refreshToken: string
   ): Promise<AuthTokens> {
     const response =
-      await fetch(
+      await this.fetchWithAuth(
         `${this.baseURL}/auth/refresh`,
         {
           method: "POST",
@@ -273,7 +314,7 @@ class ApiClient {
     data: CreateDeviceRequest
   ): Promise<Device> {
     const response =
-      await fetch(
+      await this.fetchWithAuth(
         `${this.baseURL}/devices`,
         {
           method: "POST",
@@ -290,7 +331,7 @@ class ApiClient {
 
   async listDevices(): Promise<Device[]> {
     const response =
-      await fetch(
+      await this.fetchWithAuth(
         `${this.baseURL}/devices`,
         {
           method: "GET",
@@ -308,7 +349,7 @@ class ApiClient {
     deviceId: string
   ): Promise<Device> {
     const response =
-      await fetch(
+      await this.fetchWithAuth(
         `${this.baseURL}/devices/${encodeURIComponent(
           deviceId
         )}`,
@@ -332,7 +373,7 @@ class ApiClient {
     }>
   ): Promise<Device> {
     const response =
-      await fetch(
+      await this.fetchWithAuth(
         `${this.baseURL}/devices/${encodeURIComponent(
           deviceId
         )}`,
@@ -353,7 +394,7 @@ class ApiClient {
     deviceId: string
   ): Promise<void> {
     const response =
-      await fetch(
+      await this.fetchWithAuth(
         `${this.baseURL}/devices/${encodeURIComponent(
           deviceId
         )}`,
@@ -378,7 +419,7 @@ class ApiClient {
     data: LocationSubmitRequest
   ): Promise<LocationPoint> {
     const response =
-      await fetch(
+      await this.fetchWithAuth(
         `${this.baseURL}/locations?device_id=${encodeURIComponent(
           deviceId
         )}`,
@@ -399,7 +440,7 @@ class ApiClient {
     deviceId: string
   ): Promise<LocationPoint> {
     const response =
-      await fetch(
+      await this.fetchWithAuth(
         `${this.baseURL}/locations/current/${encodeURIComponent(
           deviceId
         )}`,
@@ -444,7 +485,7 @@ class ApiClient {
     );
 
     const response =
-      await fetch(
+      await this.fetchWithAuth(
         `${this.baseURL}/locations/history/${encodeURIComponent(
           deviceId
         )}?${params.toString()}`,
@@ -567,7 +608,7 @@ class ApiClient {
     data: GrantPermissionRequest
   ): Promise<LocationPermission> {
     const response =
-      await fetch(
+      await this.fetchWithAuth(
         `${this.baseURL}/permissions/location`,
         {
           method: "POST",
@@ -586,7 +627,7 @@ class ApiClient {
     permissionId: string
   ): Promise<void> {
     const response =
-      await fetch(
+      await this.fetchWithAuth(
         `${this.baseURL}/permissions/location/${encodeURIComponent(
           permissionId
         )}`,
@@ -604,7 +645,7 @@ class ApiClient {
 
   async listPermissions(): Promise<PermissionList> {
     const response =
-      await fetch(
+      await this.fetchWithAuth(
         `${this.baseURL}/permissions`,
         {
           method: "GET",
@@ -623,7 +664,7 @@ class ApiClient {
   // =========================================================
 
   async listGeofences(): Promise<Geofence[]> {
-    const response = await fetch(
+    const response = await this.fetchWithAuth(
       `${this.baseURL}/geofences`,
       {
         method: "GET",
@@ -637,7 +678,7 @@ class ApiClient {
   async createGeofence(
     data: GeofenceCreateRequest
   ): Promise<Geofence> {
-    const response = await fetch(
+    const response = await this.fetchWithAuth(
       `${this.baseURL}/geofences`,
       {
         method: "POST",
@@ -652,7 +693,7 @@ class ApiClient {
   async deleteGeofence(
     geofenceId: string
   ): Promise<void> {
-    const response = await fetch(
+    const response = await this.fetchWithAuth(
       `${this.baseURL}/geofences/${encodeURIComponent(
         geofenceId
       )}`,

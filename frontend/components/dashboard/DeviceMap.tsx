@@ -2,6 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
+declare global {
+  interface Window {
+    gm_authFailure?: () => void;
+  }
+}
+
 interface DeviceMarker {
   latitude: number;
   longitude: number;
@@ -46,7 +52,7 @@ function loadGoogleMaps(apiKey: string): Promise<void> {
 
   mapsScript = new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async`;
     script.async = true;
     script.onload = () => resolve();
     script.onerror = () => {
@@ -73,19 +79,36 @@ export default function DeviceMap({
   const panorama = useRef<google.maps.StreetViewPanorama | null>(null);
   const [mode, setMode] = useState<MapMode>("roadmap");
   const [mapReady, setMapReady] = useState(false);
+  const [mapLoading, setMapLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [obliqueUnavailable, setObliqueUnavailable] = useState(false);
   const [streetViewUnavailable, setStreetViewUnavailable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    const previousAuthFailure = window.gm_authFailure;
+    const handleGoogleAuthFailure = () => {
+      if (!cancelled) {
+        setMapLoading(false);
+        setError(
+          "Google Maps rejected the API key. Check that Maps JavaScript API is enabled and the key allows this frontend domain."
+        );
+      }
+    };
+    window.gm_authFailure = handleGoogleAuthFailure;
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
 
     if (!apiKey) {
+      setMapLoading(false);
       setError(
         "Map views need NEXT_PUBLIC_GOOGLE_MAPS_API_KEY. Add a restricted Google Maps JavaScript API key and redeploy the frontend."
       );
-      return;
+      return () => {
+        cancelled = true;
+        if (window.gm_authFailure === handleGoogleAuthFailure) {
+          window.gm_authFailure = previousAuthFailure;
+        }
+      };
     }
 
     loadGoogleMaps(apiKey)
@@ -107,6 +130,14 @@ export default function DeviceMap({
         panorama.current = streetView;
         map.current = googleMap;
 
+        const loadingTimeout = window.setTimeout(() => {
+          setMapLoading(false);
+        }, 10000);
+        googleMap.addListener("tilesloaded", () => {
+          window.clearTimeout(loadingTimeout);
+          setMapLoading(false);
+        });
+
         setMapReady(true);
 
         streetView.addListener("status_changed", () => {
@@ -118,6 +149,7 @@ export default function DeviceMap({
       })
       .catch((loadError: unknown) => {
         if (!cancelled) {
+          setMapLoading(false);
           setError(
             loadError instanceof Error
               ? loadError.message
@@ -128,6 +160,9 @@ export default function DeviceMap({
 
     return () => {
       cancelled = true;
+      if (window.gm_authFailure === handleGoogleAuthFailure) {
+        window.gm_authFailure = previousAuthFailure;
+      }
     };
   }, []);
 
@@ -277,6 +312,18 @@ export default function DeviceMap({
             className="absolute inset-x-4 top-4 z-10 rounded-lg border border-red-700/60 bg-slate-950/95 p-4 text-sm text-red-200"
           >
             {error}
+          </div>
+        )}
+        {mapLoading && !error && (
+          <div
+            role="status"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-950/85 text-sm text-text-secondary"
+          >
+            <span
+              aria-hidden="true"
+              className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-live"
+            />
+            <span>Loading interactive map…</span>
           </div>
         )}
         {streetViewUnavailable && mode === "street-view" && (

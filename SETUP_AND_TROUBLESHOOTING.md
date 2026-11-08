@@ -97,7 +97,13 @@ imagery. Set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in the frontend deployment and
 enable the Maps JavaScript API with billing. Restrict the key to your frontend
 domains using HTTP referrer restrictions. The key is used by the browser, so
 do not use an unrestricted key. Street View and 45° imagery depend on Google
-coverage for the selected location.
+coverage for the selected location. This variable must be set on the frontend
+service (or `frontend/.env.local` during local development), not `backend/.env`,
+and the frontend must be rebuilt after changing it.
+
+The backend signs access and refresh tokens with `JWT_SECRET`. Changing or
+rotating that secret invalidates existing sessions, so users must sign in again
+after the backend is redeployed.
 
 **If this file doesn't exist**: 
 ```bash

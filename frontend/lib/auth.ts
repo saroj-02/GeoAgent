@@ -200,7 +200,19 @@ export function getRefreshToken(): string | null {
   );
 }
 
+let refreshInProgress: Promise<string> | null = null;
+
 export async function refreshAccessToken(): Promise<string> {
+  if (!refreshInProgress) {
+    refreshInProgress = requestAccessToken().finally(() => {
+      refreshInProgress = null;
+    });
+  }
+
+  return refreshInProgress;
+}
+
+async function requestAccessToken(): Promise<string> {
   const refreshToken =
     getRefreshToken();
 
@@ -226,11 +238,12 @@ export async function refreshAccessToken(): Promise<string> {
   );
 
   if (!res.ok) {
-    logout();
+    const message = await parseErrorMessage(res);
+    if (res.status === 401 || res.status === 403) {
+      logout();
+    }
 
-    throw new AuthError(
-      await parseErrorMessage(res)
-    );
+    throw new AuthError(message);
   }
 
   const data: AuthTokens =

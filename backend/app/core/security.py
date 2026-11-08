@@ -49,19 +49,8 @@ JWT_ALGORITHM = "HS256"
 
 
 def _secret_key() -> str:
-    """
-    Obtain JWT secret.
-
-    Uses SECRET_KEY if present in the Settings object. Falls back to a
-    development-only deterministic value so the application can start
-    in an existing local environment where SECRET_KEY is not defined.
-    """
-    secret = getattr(settings, "SECRET_KEY", None)
-
-    if secret:
-        return secret
-
-    return "geoagent-development-secret-change-in-production"
+    """Return the configured JWT signing secret."""
+    return settings.JWT_SECRET
 
 
 # ----------------------------------------------------------------------
