@@ -235,15 +235,16 @@ export default function DeviceMap({
     googleMap.setTilt(0);
 
     const mapTypeByMode: Record<MapMode, google.maps.MapTypeId | string> = {
-    roadmap: "roadmap",
-    satellite: "satellite",
-    hybrid: "hybrid",
-    terrain: "terrain",
-    oblique: "satellite",
-    heatmap: "roadmap",
-  };
+  roadmap: "roadmap",
+  satellite: "satellite",
+  hybrid: "hybrid",
+  terrain: "terrain",
+  oblique: "satellite",
+  heatmap: "roadmap",
+  "street-view": "roadmap",
+};
 
-  googleMap.setMapTypeId(mapTypeByMode[mode] ?? "roadmap");
+googleMap.setMapTypeId(mapTypeByMode[mode] ?? "roadmap");
 
     if (mode === "oblique") {
       googleMap.setZoom(Math.max(googleMap.getZoom() ?? 18, 18));
