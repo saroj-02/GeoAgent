@@ -120,7 +120,7 @@ export default function DeviceMap({
         const googleMap = new google.maps.Map(mapElement.current, {
           center: DEFAULT_CENTER,
           zoom: 7,
-          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          mapTypeId: "roadmap",
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: true,
@@ -234,18 +234,16 @@ export default function DeviceMap({
     streetView.setVisible(false);
     googleMap.setTilt(0);
 
-    const mapTypeByMode: Partial<
-      Record<MapMode, google.maps.MapTypeId>
-    > = {
-      roadmap: google.maps.MapTypeId.ROADMAP,
-      satellite: google.maps.MapTypeId.SATELLITE,
-      hybrid: google.maps.MapTypeId.HYBRID,
-      terrain: google.maps.MapTypeId.TERRAIN,
-      oblique: google.maps.MapTypeId.SATELLITE,
-      heatmap: google.maps.MapTypeId.ROADMAP,
-    };
+    const mapTypeByMode: Record<MapMode, google.maps.MapTypeId | string> = {
+    roadmap: "roadmap",
+    satellite: "satellite",
+    hybrid: "hybrid",
+    terrain: "terrain",
+    oblique: "satellite",
+    heatmap: "roadmap",
+  };
 
-    googleMap.setMapTypeId(mapTypeByMode[mode] ?? google.maps.MapTypeId.ROADMAP);
+  googleMap.setMapTypeId(mapTypeByMode[mode] ?? "roadmap");
 
     if (mode === "oblique") {
       googleMap.setZoom(Math.max(googleMap.getZoom() ?? 18, 18));
