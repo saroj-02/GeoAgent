@@ -240,72 +240,104 @@ export default function DeviceMap({
   }, [mapReady, markers]);
 
   useEffect(() => {
-    const googleMap = map.current;
-    const streetView = panorama.current;
+  const googleMap = map.current;
+  const streetView = panorama.current;
 
-    if (!googleMap || !streetView || !mapReady) {
+  if (!googleMap || !streetView || !mapReady) return;
+
+  let cancelled = false;
+
+  setObliqueUnavailable(false);
+  setStreetViewUnavailable(false);
+
+  if (mode === "street-view") {
+    const center = googleMap.getCenter();
+
+    if (!center) {
+      setStreetViewUnavailable(true);
       return;
     }
 
-    setObliqueUnavailable(false);
-    setStreetViewUnavailable(false);
+    const service = new google.maps.StreetViewService();
 
-    if (mode === "street-view") {
-      const center = googleMap.getCenter();
-      if (center) {
-        streetView.setPosition(center);
-      }
-      streetView.setVisible(true);
-      return;
-    }
+    service.getPanorama(
+      {
+        location: center,
+        radius: 10000,
+        preference: google.maps.StreetViewPreference.NEAREST,
+      },
+      (data, status) => {
+        if (cancelled || map.current !== googleMap) return;
 
-    streetView.setVisible(false);
-    googleMap.setTilt(0);
-
-    const mapTypeByMode: Record<MapMode, google.maps.MapTypeId | string> = {
-  roadmap: "roadmap",
-  satellite: "satellite",
-  hybrid: "hybrid",
-  terrain: "terrain",
-  oblique: "satellite",
-  heatmap: "roadmap",
-  "street-view": "roadmap",
-};
-
-googleMap.setMapTypeId(mapTypeByMode[mode] ?? "roadmap");
-
-    if (mode === "oblique") {
-      googleMap.setZoom(Math.max(googleMap.getZoom() ?? 18, 18));
-      googleMap.setTilt(45);
-      window.setTimeout(() => {
-        if (map.current === googleMap && googleMap.getTilt() !== 45) {
-          setObliqueUnavailable(true);
+        if (
+          status === google.maps.StreetViewStatus.OK &&
+          data?.location?.pano
+        ) {
+          streetView.setPano(data.location.pano);
+          streetView.setPov({ heading: 0, pitch: 0 });
+          streetView.setVisible(true);
+          setStreetViewUnavailable(false);
+        } else {
+          streetView.setVisible(false);
+          setStreetViewUnavailable(true);
         }
-      }, 1200);
-    }
-
-    const heatCircles =
-      mode === "heatmap"
-        ? markers.map(
-            (marker) =>
-              new google.maps.Circle({
-                map: googleMap,
-                center: {
-                  lat: marker.latitude,
-                  lng: marker.longitude,
-                },
-                radius: 450,
-                strokeOpacity: 0,
-                fillColor: "#ff3b4e",
-                fillOpacity: 0.18,
-              })
-          )
-        : [];
+      }
+    );
 
     return () => {
-      heatCircles.forEach((circle) => circle.setMap(null));
+      cancelled = true;
     };
-  }, [mapReady, markers, mode]);
+  }
+
+  streetView.setVisible(false);
+  googleMap.setTilt(0);
+
+  const mapTypeByMode: Record<MapMode, string> = {
+    roadmap: "roadmap",
+    satellite: "satellite",
+    hybrid: "hybrid",
+    terrain: "terrain",
+    oblique: "satellite",
+    heatmap: "roadmap",
+    "street-view": "roadmap",
+  };
+
+  googleMap.setMapTypeId(mapTypeByMode[mode] ?? "roadmap");
+
+  if (mode === "oblique") {
+    googleMap.setZoom(Math.max(googleMap.getZoom() ?? 18, 18));
+    googleMap.setTilt(45);
+
+    window.setTimeout(() => {
+      if (map.current === googleMap && googleMap.getTilt() !== 45) {
+        setObliqueUnavailable(true);
+      }
+    }, 1200);
+  }
+
+  const heatCircles =
+    mode === "heatmap"
+      ? markers.map(
+          (marker) =>
+            new google.maps.Circle({
+              map: googleMap,
+              center: {
+                lat: marker.latitude,
+                lng: marker.longitude,
+              },
+              radius: 450,
+              strokeOpacity: 0,
+              fillColor: "#ff3b4e",
+              fillOpacity: 0.18,
+            })
+        )
+      : [];
+
+  return () => {
+    cancelled = true;
+    heatCircles.forEach((circle) => circle.setMap(null));
+  };
+}, [mapReady, markers, mode]);
 
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-panel">
