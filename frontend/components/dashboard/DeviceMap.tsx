@@ -39,27 +39,55 @@ const DEFAULT_CENTER: google.maps.LatLngLiteral = {
   lng: 85.8,
 };
 
-let mapsScript: Promise<void> | null = null;
+let mapsScript: Promise<google.maps.MapsLibrary> | null = null;
 
-function loadGoogleMaps(apiKey: string): Promise<void> {
-  if (window.google?.maps) {
-    return Promise.resolve();
-  }
+function loadGoogleMaps(
+  apiKey: string
+): Promise<google.maps.MapsLibrary> {
+  if (mapsScript) return mapsScript;
 
-  if (mapsScript) {
-    return mapsScript;
-  }
+  mapsScript = (async () => {
+    if (typeof window.google?.maps?.importLibrary !== "function") {
+      await new Promise<void>((resolve, reject) => {
+        const existingScript = document.querySelector<HTMLScriptElement>(
+          'script[src*="maps.googleapis.com/maps/api/js"]'
+        );
 
-  mapsScript = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async`;
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => {
-      mapsScript = null;
-      reject(new Error("Google Maps could not be loaded. Check the API key and network connection."));
-    };
-    document.head.appendChild(script);
+        if (existingScript) {
+          existingScript.addEventListener("load", () => resolve(), {
+            once: true,
+          });
+          existingScript.addEventListener(
+            "error",
+            () => reject(new Error("Google Maps script failed to load.")),
+            { once: true }
+          );
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src =
+          `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async`;
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve();
+        script.onerror = () =>
+          reject(new Error("Google Maps script failed to load."));
+
+        document.head.appendChild(script);
+      });
+    }
+
+    if (typeof window.google?.maps?.importLibrary !== "function") {
+      throw new Error("Google Maps importLibrary is unavailable.");
+    }
+
+    return (await window.google.maps.importLibrary(
+      "maps"
+    )) as google.maps.MapsLibrary;
+  })().catch((error) => {
+    mapsScript = null;
+    throw error;
   });
 
   return mapsScript;
@@ -112,12 +140,12 @@ export default function DeviceMap({
     }
 
     loadGoogleMaps(apiKey)
-      .then(() => {
+      .then((mapsLibrary) => {
         if (cancelled || !mapElement.current) {
           return;
         }
 
-        const googleMap = new google.maps.Map(mapElement.current, {
+        const googleMap = new mapsLibrary.Map(mapElement.current, {
           center: DEFAULT_CENTER,
           zoom: 7,
           mapTypeId: "roadmap",
